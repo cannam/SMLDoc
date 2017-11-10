@@ -1,0 +1,37 @@
+
+# Single standalone Makefile for building SMLDoc using MLton.
+
+all:	src/mlton/smldoc
+
+install:	src/mlton/smldoc
+	mkdir -p /usr/local/bin/
+	cp $< /usr/local/bin/
+
+MLLEX	:= mllex/smllex
+MLYACC	:= mlyacc/smlyacc
+
+SMLDOC_GEN		:= $(patsubst %,%.sml,$(wildcard src/main/*.grm src/main/*.lex src/main/smlnjcm/*.grm src/main/smlnjcm/*.lex))
+
+MLLEX_SOURCE_DEPS	:= $(wildcard mllex/*.sml)
+MLYACC_SOURCE_DEPS	:= $(wildcard mlyacc/*.sml mlyacc/src/*.sml mlyacc/src/*.lex)
+SMLDOC_SOURCE_DEPS	:= $(wildcard src/*.sml)
+
+src/mlton/smldoc:	src/mlton/smldoc.mlb $(MLLEX) $(MLYACC) $(SMLDOC_GEN)
+	mlton $<
+
+$(MLLEX):	$(MLLEX_SOURCE_DEPS) $(MLLEX).mlb
+	mlton $(MLLEX).mlb
+
+$(MLYACC):	$(MLYACC_SOURCE_DEPS) $(MLYACC).mlb mlyacc/src/yacc.lex.sml
+	mlton $(MLYACC).mlb
+
+%.lex.sml:	%.lex
+	$(MLLEX) $<
+
+%.grm.sml:	%.grm
+	$(MLYACC) $<
+
+clean:
+	rm -f $(MLLEX) $(MLYACC)
+	rm -f mlyacc/src/yacc.lex.sml
+	rm -f $(SMLDOC_GEN)
