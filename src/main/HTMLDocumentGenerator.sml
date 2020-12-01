@@ -1282,11 +1282,12 @@ struct
   (****************************************)
 
   fun HTMLOfFrame
-      (
-        titleOpt,
-        (leftFrameName, leftFrameFileName),
-        (rightFrameName, rightFrameFileName)
-      ) =
+          makeHeaders
+          (
+            titleOpt,
+            (leftFrameName, leftFrameFileName),
+            (rightFrameName, rightFrameFileName)
+          ) =
       let
         val title =
             case titleOpt of SOME title => title | NONE => "SML documentation"
@@ -1316,12 +1317,13 @@ struct
         HTML.HTML
         {
           version = NONE,
-          head = [HTML.Head_TITLE title],
+          head = makeHeaders title,
           body = HTML.FRAMEBODY{frame = frameSet, noframes = noframes}
         }
       end
 
-  fun HTMLOfModuleList targetFrame overviewFileName listSubModule moduleHTMLs =
+  fun HTMLOfModuleList targetFrame overviewFileName listSubModule
+                       makeHeaders moduleHTMLs =
       let
         val moduleHTMLs' =
             (* get rid of submodules from moduleHTMLs, if specified *)
@@ -1423,7 +1425,7 @@ struct
         HTML.HTML
         {
           version = NONE,
-          head = [],
+          head = makeHeaders "Module list",
           body =
           HTML.BODY
           {
@@ -2364,6 +2366,30 @@ struct
               SOME file => file
             | NONE => "help-doc.html"
 
+        fun headersFor title =
+            List.concat
+                [[HTML.Head_TITLE title],
+                 case #styleSheet parameters of
+                     NONE => []
+                   | SOME styleSheet =>
+                     [HTML.Head_LINK {
+                           id = NONE,
+                           href = SOME styleSheet,
+                           rel = SOME "stylesheet",
+                           rev = NONE,
+                           title = NONE
+                     }],
+                 case #charSet parameters of
+                     NONE => []
+                   | SOME charSet =>
+                     [HTML.Head_META
+                          {
+                            httpEquiv = SOME "content-type",
+                            name = NONE,
+                            content = "text/html; charset=" ^ charSet
+                     }]
+                ]
+                          
         fun emitHTML (fileName, documentHTML) =
             let
               val filePath = OS.Path.concat(#directory parameters, fileName)
@@ -2383,6 +2409,7 @@ struct
         fun HTMLFromBodyBlock
                 (navigatedPages : navigatedPages)
                 additionalNavBarBlockOpt
+                makeHeaders
                 (title, documentBodyBlock) =
             let
               val navigatedPages' =
@@ -2409,30 +2436,6 @@ struct
                     | SOME block => [block]))
               val headerNavigationBar = makeNavBar (#header parameters)
               val footerNavigationBar = makeNavBar (#footer parameters)
-
-              val HTMLheaders =
-                  List.concat
-                      [[HTML.Head_TITLE title],
-                       case #styleSheet parameters of
-                           NONE => []
-                         | SOME styleSheet =>
-                           [HTML.Head_LINK {
-                                 id = NONE,
-                                 href = SOME styleSheet,
-                                 rel = SOME "stylesheet",
-                                 rev = NONE,
-                                 title = NONE
-                           }],
-                       case #charSet parameters of
-                           NONE => []
-                         | SOME charSet =>
-                           [HTML.Head_META
-                                {
-                                  httpEquiv = SOME "content-type",
-                                  name = NONE,
-                                  content = "text/html; charset=" ^ charSet
-                           }]
-                      ]
                       
               val bodyBlock =
                   HTML.blockList
@@ -2456,7 +2459,7 @@ struct
                     content = bodyBlock
                   }
             in
-              HTML.HTML{version = NONE, head = HTMLheaders, body = body}
+              HTML.HTML{version = NONE, head = makeHeaders title, body = body}
             end
 
         (****************************************)
@@ -2529,6 +2532,7 @@ struct
                         help = SOME(SOME helpFileName)
                       }
                       (SOME indexOfIndexesBlock)
+                      (headersFor)
                       ("Index", block))
                     )
                 fileNameAndBlocks
@@ -2558,6 +2562,7 @@ struct
                                 help = SOME(SOME helpFileName)
                               }
                               NONE
+                              (headersFor)
                               ("Source", bodyBlock)
                         )
                       end)
@@ -2589,6 +2594,7 @@ struct
               help = SOME(SOME helpFileName)
             }
             NONE
+            (headersFor)
             ("Overview",
              bodyBlockOfOverviewPage
                  (#docTitle parameters, overviewDetail, customOverviewText))
@@ -2608,6 +2614,7 @@ struct
                  help = SOME NONE
                }
                NONE
+               (headersFor)
                (
                  "Help",
                  bodyBlockOfDefaultHelp
@@ -2632,6 +2639,7 @@ struct
                     help = SOME(SOME helpFileName)
                   }
                   NONE
+                  (headersFor)
                   (EA.moduleFQNToString moduleFQN, documentBodyBlock)
               val fileName = makeFileNameForModule moduleFQN
             in
@@ -2645,10 +2653,12 @@ struct
             moduleFrameName
             overviewFileName
             (#listSubModule parameters)
+            (headersFor)
             moduleDocuments
 
         val HTMLOfFrame =
             HTMLOfFrame
+            (headersFor)
             (
               #windowTitle parameters,
               (moduleListFrameName, moduleListFileName),
