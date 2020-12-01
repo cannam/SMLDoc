@@ -2411,17 +2411,29 @@ struct
               val footerNavigationBar = makeNavBar (#footer parameters)
 
               val HTMLheaders =
-                  HTML.Head_TITLE (title) ::
-                  (case #charSet parameters of
-                     NONE => []
-                   | SOME charSet =>
-                     [HTML.Head_META
-                      {
-                        httpEquiv = SOME "content-type",
-                        name = NONE,
-                        content = "text/html; charset=" ^ charSet
-                      }])
-
+                  List.concat
+                      [[HTML.Head_TITLE title],
+                       case #styleSheet parameters of
+                           NONE => []
+                         | SOME styleSheet =>
+                           [HTML.Head_LINK {
+                                 id = NONE,
+                                 href = SOME styleSheet,
+                                 rel = SOME "stylesheet",
+                                 rev = NONE,
+                                 title = NONE
+                           }],
+                       case #charSet parameters of
+                           NONE => []
+                         | SOME charSet =>
+                           [HTML.Head_META
+                                {
+                                  httpEquiv = SOME "content-type",
+                                  name = NONE,
+                                  content = "text/html; charset=" ^ charSet
+                           }]
+                      ]
+                      
               val bodyBlock =
                   HTML.blockList
                   (headerNavigationBar ::

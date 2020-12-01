@@ -36,6 +36,7 @@ struct
              navbar : bool,
              showSummary : bool,
              splitIndex : bool,
+             styleSheet : string option,
              uses : bool,
              version : bool,
              verbose : bool,

@@ -48,6 +48,7 @@ struct
          | ShowSummary
          | SplitIndex
          | StdIn
+         | StyleSheet of string
          | Use
          | Verbose
          | Version
@@ -229,6 +230,12 @@ struct
           long = ["splitindex"],
           desc = NoArg SplitIndex,
           help = "Split index into one file per letter"
+        },
+        {
+          short = "",
+          long = ["stylesheet"],
+          desc = ReqArg(StyleSheet, "URL"),
+          help = "Include CSS stylesheet link URL"
         },
 (*
         {
@@ -449,6 +456,8 @@ struct
               findOption (fn ShowSummary => SOME(true) | _ => NONE) false,
               splitIndex = 
               findOption (fn SplitIndex => SOME(true) | _ => NONE) false,
+              styleSheet =
+              findOption (fn StyleSheet h => SOME(SOME h) | _ => NONE) NONE,
               uses = findOption (fn Use => SOME(true) | _ => NONE) false,
               verbose = findOption (fn Verbose => SOME true | _ => NONE) false,
               version =
